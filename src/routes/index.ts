@@ -43,6 +43,27 @@ export class Routes {
         });
       }
     });
+
+
+    router.delete('/delete-user/:id',async (req: Request, res: Response) => {
+      try {
+        let id = req.params.id;
+
+        let query = await execute<{ affectedRows: number }>('delete from `usuarios` where ID = ?',[id]);
+
+        if (query.affectedRows > 0) {
+          res.status(200).send({ msg: 'EL usuario se elimino exitosdamente' });
+        } else {
+          res.status(300).send({ msg: 'El usuario no se pudo eliminar intentelo mas tarde' });
+        }
+      } catch (error) {
+        console.log(error);
+        res.send({
+          status: 500,
+          msg: 'Hubo un error eliminando el usuario',
+        });
+      }
+    })
   }
 }
 
