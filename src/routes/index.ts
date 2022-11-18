@@ -83,11 +83,9 @@ export class Routes {
     router.put('/update-user/:id', async (req: Request, res: Response) => {
       try {
         let id = req.params.id;
-        console.log({ id });
 
         const body = req.body;
         const user = await getUser(Number(id));
-        console.log('user request =>', user);
 
         if (user && user.length) {
           let query = await execute<{ affectedRows: number }>(
