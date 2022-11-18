@@ -1,5 +1,6 @@
 import { Request, Response, Router } from 'express';
 import { execute } from '../server/mysql.connector';
+import { getUser } from '../utils/bd';
 
 export class Routes {
   public static indexRoutes(router: Router) {
@@ -44,17 +45,31 @@ export class Routes {
       }
     });
 
-
-    router.delete('/delete-user/:id',async (req: Request, res: Response) => {
+    router.delete('/delete-user/:id', async (req: Request, res: Response) => {
       try {
         let id = req.params.id;
 
-        let query = await execute<{ affectedRows: number }>('delete from `usuarios` where ID = ?',[id]);
+        const user = await getUser(Number(id));
 
-        if (query.affectedRows > 0) {
-          res.status(200).send({ msg: 'EL usuario se elimino exitosdamente' });
+        if (user && user.RowDataPacket && user.RowDataPacket.ID) {
+          let query = await execute<{ affectedRows: number }>(
+            'delete from `usuarios` where ID = ?',
+            [id]
+          );
+
+          if (query.affectedRows > 0) {
+            res
+              .status(200)
+              .send({ msg: 'EL usuario se elimino exitosdamente' });
+          } else {
+            res.status(300).send({
+              msg: 'El usuario no se pudo eliminar intentelo mas tarde',
+            });
+          }
         } else {
-          res.status(300).send({ msg: 'El usuario no se pudo eliminar intentelo mas tarde' });
+          res.status(404).send({
+            msg: 'El usuario no existe por favor verifique la informacion',
+          });
         }
       } catch (error) {
         console.log(error);
@@ -63,7 +78,45 @@ export class Routes {
           msg: 'Hubo un error eliminando el usuario',
         });
       }
-    })
+    });
+
+    router.put('/update-user/:id', async (req: Request, res: Response) => {
+      try {
+        let id = req.params.id;
+        console.log({ id });
+
+        const body = req.body;
+        const user = await getUser(Number(id));
+        console.log('user request =>', user);
+
+        if (user && user.length) {
+          let query = await execute<{ affectedRows: number }>(
+            'UPDATE `usuarios` SET `NIT` = ? , `USUARIO` = ?, `OBSERVACIONES` = ? WHERE `usuarios`.`ID` = ?',
+            [body.nit, body.usuario, body.observacion, id]
+          );
+
+          if (query.affectedRows > 0) {
+            res
+              .status(200)
+              .send({ msg: 'EL usuario se actualizo exitosdamente' });
+          } else {
+            res.status(300).send({
+              msg: 'El usuario no se pudo actualizar intentelo mas tarde',
+            });
+          }
+        } else {
+          res.status(404).send({
+            msg: 'El usuario no existe por favor verifique la informacion',
+          });
+        }
+      } catch (error) {
+        console.log(error);
+        res.send({
+          status: 500,
+          msg: 'Hubo un error actualizando el usuario',
+        });
+      }
+    });
   }
 }
 
